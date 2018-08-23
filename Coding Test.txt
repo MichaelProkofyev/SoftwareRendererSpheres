@@ -1,0 +1,39 @@
+﻿Copyright 2001-2018 Crytek GmbH / Crytek Group. All rights reserved.
+
+C# Programming Test: Managed Sphere Data Viewer
+
+We provide two files (sphere_sample_points.txt and sphere_sample_points.xml) with the sphere data.
+Each sphere in the dataset is defined by position, radius and colour. In order to visualize a 3d 
+sphere dataset in real-time, a CPU only solution should be implemented. 
+
+Your Task: A Viewer that meets following requirements:
+• The image should be rendered to a 1024x1024@32bit buffer.
+• The spheres should spin in front of the camera. 
+• the dataset is static
+• The dataset should be read from the included XML file (sphere_sample_points.xml).
+• Each sphere should gradually change between its initial and a random color while rotating.
+	- They need to change 10 times per full rotation.
+• The spheres should be rendered:
+	- Using perspective projection.
+	- Using some HSR (Hidden Surface Removal) algorithm.
+• Simple shading (diffuse and specular) from a directional light source. No need for shadows.
+
+A framework with the initial implementation is provided with the test. 
+
+The viewer should be created on top of that framework following those guidelines:
+• Add the missing viewer functionality.
+• Aim for a performance as well as appropriately structured code.
+	- Implement the system with the necessary data structures.
+	- Make sure that the dataset is rendered efficiently. 
+	- Use multiple threads (don’t worry about portability or backward compatibility).
+	- Inner loop performance optimization.
+	- Libraries such as System.Numerics can be used.
+	- Nice visual output is a plus.
+• Ensure stable results when the elements touch the view borders.
+• Explain why you made certain design decisions.
+• Write clean and readable code.
+• Comment the code to the degree that you feel is necessary.
+
+Expected environment: OS=Windows, CPU=Intel Core i7 or AMD RYZEN 7, RAM=16GB
+
+Please send back the modifed source code within 1 week.
