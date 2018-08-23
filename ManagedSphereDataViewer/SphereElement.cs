@@ -14,9 +14,9 @@ namespace ManagedSphereDataViewer
 		public readonly float R;
 		public readonly uint Color;
 
-        public double screenZ;
+        public float screenZ;
 
-		public SphereElement(float x, float y, float z, float r, double screenZ, uint color)
+		public SphereElement(float x, float y, float z, float r, float screenZ, uint color)
 		{
 			X = x;
 			Y = y;

@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Threading;
 
 namespace ManagedSphereDataViewer
 {
 	public class FrameBuffer
 	{
 		private byte[] _buffer;
-        private double[] _zBuffer;
+        private float[] _zBuffer;
         private readonly int _width;
 		private readonly int _height;
 		private readonly int _bytesPerPixel;
@@ -21,7 +22,7 @@ namespace ManagedSphereDataViewer
 			_height = height;
 			_bytesPerPixel = bytesPerPixel;
 			_buffer = new byte[width * height * bytesPerPixel];
-            _zBuffer = new double[width * height];
+            _zBuffer = new float[width * height];
         }
 
 		public byte[] GetBuffer()
@@ -31,9 +32,7 @@ namespace ManagedSphereDataViewer
 
 		public void Clear()
 		{
-            //May be even slower
-            //Array.Clear(_buffer, 0, _buffer.Length);
-
+            //Array.Clear() shouldn't be faster
             for (int i = 0; i < _buffer.Length; ++i)
 			{
 				_buffer[i] = 0;
@@ -41,7 +40,7 @@ namespace ManagedSphereDataViewer
 
             for (int i = 0; i < _zBuffer.Length; ++i)
             {
-                _zBuffer[i] = double.MaxValue;
+                _zBuffer[i] = float.MaxValue;
             }
 
             renderedPixels = 0;
@@ -66,7 +65,7 @@ namespace ManagedSphereDataViewer
             }
         }
 
-		public void RenderSphere(float screenX, float screenY, double screenZ, float screenRadius, uint color, Vector3 lightDir)
+		public void RenderSphere(float screenX, float screenY, float screenZ, float screenRadius, uint color, Vector3 lightDir)
 		{
             int centerX = (int)(screenX * _width / 2 + _width / 2);
 			int centerY = (int)(screenY * _width / 2 + _width / 2);
@@ -95,10 +94,19 @@ namespace ManagedSphereDataViewer
 					if(x < 0 || x >= _width)
 						continue;
 
-                    if (screenZ < _zBuffer[x + y * _width])
+                    //Skip the current pixel, if its obscured by other sphere
+                    bool pixelVisible;
+                    //lock (_zBuffer)
+                    {
+                        pixelVisible = screenZ < _zBuffer[x + y * _width];
+                    }
+                    if (pixelVisible)
                     {
                         ++renderedPixels;
-                        _zBuffer[x + y * _width] = screenZ;
+                        //lock (_zBuffer)
+                        {
+                            _zBuffer[x + y * _width] = screenZ;
+                        }
 
                         // Phong shading
                         {

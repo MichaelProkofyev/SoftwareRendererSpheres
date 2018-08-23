@@ -22,6 +22,7 @@ namespace ManagedSphereDataViewer
 				string line = null;
 				char[] splitChar = new char[] { ' ' };
 				Random rand = new Random(1);
+                int sphereCounter = 0;
 				while(true)
 				{
 					line = reader.ReadLine();
@@ -53,7 +54,11 @@ namespace ManagedSphereDataViewer
 
 					var sphere = new SphereElement(x, y, z, r, 0, BGRA);
 					_spheres.Add(sphere);
-				}
+                    //if (++sphereCounter > 2)
+                    //{
+                    //    break;
+                    //}
+                }
 			}
 
 			_lightDirection = new Vector3(1.0f, -0.5f, 0.7f);
@@ -80,13 +85,13 @@ namespace ManagedSphereDataViewer
                 }
             }
 
-            //_spheres.Sort(CompareSpheres);
+            _spheres.Sort(CompareSpheres);
 
-            _spheres.AsEnumerable()
-                .AsParallel()
-                .ForAll((sphere) => PrepareSphere(frameBuffer, sphere, s, c));
+            //_spheres.AsEnumerable()
+            //    .AsParallel()
+            //    .ForAll((sphere) => PrepareSphere(frameBuffer, sphere, s, c));
 
-            //_spheres.ForEach((sphere) => PrepareSphere(frameBuffer, sphere, s, c));
+            _spheres.ForEach((sphere) => PrepareSphere(frameBuffer, sphere, s, c));
 
         }
 
@@ -94,7 +99,7 @@ namespace ManagedSphereDataViewer
         {
             float fX = sphere.X * s - sphere.Z * c;
             float fY = sphere.Y;
-            double fZ = sphere.screenZ;
+            float fZ = sphere.screenZ;
 
             fZ += 1.5f;
 
@@ -103,10 +108,10 @@ namespace ManagedSphereDataViewer
                 return;
 
             //Weak perspective projection
-            float fScreenX = fX / (float)fZ;
-            float fScreenY = fY / (float)fZ;
-            double fScreenZ = fZ;
-            frameBuffer.RenderSphere(fScreenX, fScreenY, fScreenZ, sphere.R / (float)fZ, sphere.Color, _lightDirection);
+            float fScreenX = fX / fZ;
+            float fScreenY = fY / fZ;
+            float fScreenZ = fZ;
+            frameBuffer.RenderSphere(fScreenX, fScreenY, fScreenZ, sphere.R / fZ, sphere.Color, _lightDirection);
         }
 
 		private int CompareSpheres(SphereElement s1, SphereElement s2)
