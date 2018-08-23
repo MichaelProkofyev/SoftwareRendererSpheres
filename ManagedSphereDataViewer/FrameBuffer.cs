@@ -65,7 +65,7 @@ namespace ManagedSphereDataViewer
             }
         }
 
-		public void RenderSphere(float screenX, float screenY, float screenZ, float screenRadius, uint color, Vector3 lightDir)
+        public void RenderSphere(float screenX, float screenY, float screenZ, float screenRadius, uint color, Vector3 lightDir)
 		{
             int centerX = (int)(screenX * _width / 2 + _width / 2);
 			int centerY = (int)(screenY * _width / 2 + _width / 2);
@@ -148,7 +148,7 @@ namespace ManagedSphereDataViewer
                             else
                             {
                                 //Do we need this?
-                                //SetPixel(x, y, 0, 0, 0);
+                                SetPixel(x, y, 0, 0, 0);
                             }
                         }
                     }

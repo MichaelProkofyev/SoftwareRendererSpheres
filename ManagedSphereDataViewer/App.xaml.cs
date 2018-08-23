@@ -33,11 +33,13 @@ namespace ManagedSphereDataViewer
 		private TextBlock _textBlock;
 		private Window _mainWindow;
 		private float _rotation;
-		private float _rotationSpeed = 0.005f;
+		private float _rotationSpeed = 0.25f;
+
+        DateTimeOffset lastTime;
 
 
-		#region Profiling data
-		private Stopwatch _stopwatch = new Stopwatch();
+        #region Profiling data
+        private Stopwatch _stopwatch = new Stopwatch();
 		private long _totalFrames = 0;
 		private int _frames = 0;
 		private int _prevFrames = 0;
@@ -119,8 +121,10 @@ namespace ManagedSphereDataViewer
 			_mainWindow.Content = stackPanel;
 			_mainWindow.Show();
 
-			// The DispatcherTimer will be used to update the viewer constantly
-			DispatcherTimer dispatcherTimer = new DispatcherTimer();
+            // The DispatcherTimer will be used to update the viewer constantly
+            lastTime = DateTimeOffset.Now;
+
+            DispatcherTimer dispatcherTimer = new DispatcherTimer();
 			dispatcherTimer.Tick += new EventHandler(Update);
 			dispatcherTimer.IsEnabled = true;
 			dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 0);
@@ -129,7 +133,9 @@ namespace ManagedSphereDataViewer
 
 		private void Update(object sender, EventArgs e)
 		{
-			RenderFrame();
+            float deltaTime = (float)(DateTimeOffset.Now - lastTime).TotalSeconds;
+            lastTime = DateTimeOffset.Now;
+            RenderFrame(deltaTime);
 
 			//Update writeable bitmap by writing the frame data to the bitmap.
 			_bitmap.WritePixels(_rect, _frameBuffer.GetBuffer(), _stride, 0, 0);
@@ -140,11 +146,11 @@ namespace ManagedSphereDataViewer
 			UpdateProfiler();
 		}
 
-		private void RenderFrame()
+		private void RenderFrame(float deltaTime)
 		{
 			_frameBuffer.Clear();
             //TODO: Multiply rotation speed by deltaTime
-			_rotation += _rotationSpeed;
+			_rotation += _rotationSpeed * deltaTime;
 			_sphereData.Render(_frameBuffer, _rotation);
 		}
 

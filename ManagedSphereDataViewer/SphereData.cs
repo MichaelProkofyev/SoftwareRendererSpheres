@@ -85,14 +85,14 @@ namespace ManagedSphereDataViewer
                 }
             }
 
-            _spheres.Sort(CompareSpheres);
 
-            //_spheres.AsEnumerable()
-            //    .AsParallel()
-            //    .ForAll((sphere) => PrepareSphere(frameBuffer, sphere, s, c));
+            _spheres.AsEnumerable()
+                .AsParallel()
+                .ForAll((sphere) => PrepareSphere(frameBuffer, sphere, s, c));
 
-            _spheres.ForEach((sphere) => PrepareSphere(frameBuffer, sphere, s, c));
-
+            //Single-threaded
+            //_spheres.Sort(CompareSpheres);
+            //_spheres.ForEach((sphere) => PrepareSphere(frameBuffer, sphere, s, c));
         }
 
         private void PrepareSphere(FrameBuffer frameBuffer, SphereElement sphere, float s, float c)
