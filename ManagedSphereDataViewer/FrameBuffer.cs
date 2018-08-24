@@ -10,6 +10,7 @@ namespace ManagedSphereDataViewer
         private readonly int _width;
 		private readonly int _height;
 		private readonly int _bytesPerPixel;
+        private readonly int _stride;
 
         public int renderedPixels;
         public int culledPixels;
@@ -21,7 +22,8 @@ namespace ManagedSphereDataViewer
 			_width = width;
 			_height = height;
 			_bytesPerPixel = bytesPerPixel;
-			_buffer = new byte[width * height * bytesPerPixel];
+            _stride = _width * _bytesPerPixel;
+            _buffer = new byte[width * height * bytesPerPixel];
             _zBuffer = new float[width * height];
         }
 
@@ -67,31 +69,35 @@ namespace ManagedSphereDataViewer
 
         public void RenderSphere(float screenX, float screenY, float screenZ, float screenRadius, uint color, Vector3 lightDir)
 		{
+            uint colorComponentRed = ((color & 0xFF0000) >> 16);
+            uint colorComponentGreen = ((color & 0x00FF00) >> 8);
+            uint colorComponentBlue = ((color & 0x0000FF) >> 0);
+
+
+            int centerY = (int)(screenY * _width / 2 + _width / 2);
             int centerX = (int)(screenX * _width / 2 + _width / 2);
-			int centerY = (int)(screenY * _width / 2 + _width / 2);
 
-			int RX = (int)(screenRadius * _width / 2);
-			int RY = (int)(screenRadius * _width / 2);
+            //For square 1024x1024 buffer Rx == Ry
+			int R = (int)(screenRadius * _width / 2);
 
-            //int sphereWidth = RX * 4;
-            //int sphereHeight = RY * 4;
-            //Pixel[] spherePixels = new Pixel[sphereWidth * sphereHeight];
-            //int pixNumber = 0;
-
+            int Rsquared = R * R;
+            int maxX = centerX + R * 2;
+            int maxY = centerY + R * 2;
             //QUESTIONABLE AMOUNT OF LOOPING
-            for (int x = centerX - RX * 2; x <= centerX + RX * 2; ++x)
+            for (int x = centerX - R * 2; x <= maxX; ++x)
 			{
-				for(int y = centerY - RY * 2; y <= centerY + RY * 2; ++y)
+                if (x < 0 || x >= _width)
+                    continue;
+                for (int y = centerY - R * 2; y <= maxY; ++y)
 				{
+					if(y < 0 || y >= _height)
+						continue;
+
 					int dx = x - centerX;
 					int dy = y - centerY;
 
-                    //Pixel too smal to fit on a sphere
-					if(dx * dx + dy * dy > RX * RY)
-						continue;
-					if(y < 0 || y >= _height)
-						continue;
-					if(x < 0 || x >= _width)
+                    //Pixel too small to fit on a sphere
+					if(dx * dx + dy * dy > Rsquared)
 						continue;
 
                     //Skip the current pixel, if its obscured by other sphere
@@ -113,7 +119,7 @@ namespace ManagedSphereDataViewer
                             Vector3 vec_normal = new Vector3();
                             vec_normal.x = dx;
                             vec_normal.y = dy;
-                            vec_normal.z = (float)Math.Sqrt((RX * RY) - (dx * dx + dy * dy));
+                            vec_normal.z = (float)Math.Sqrt((Rsquared) - (dx * dx + dy * dy));
                             vec_normal.Normalize();
 
                             float NdotL = lightDir.Dot(vec_normal);
@@ -128,54 +134,36 @@ namespace ManagedSphereDataViewer
                                 float NdotHV = vec_eye.Dot(vec_normal);
                                 float specular = (float)Math.Pow(NdotHV, 9); // shininess=9
                                 float alpha = (NdotL + specular);
-                                if (alpha > 1.0f)
-                                {
-                                    alpha = 1.0f;
-                                }
+                                alpha = Math.Min(alpha, 1.0f); //Math.Min is slightly faster than if
 
-
-                                byte b = (byte)(((color & 0x0000FF) >> 0) * alpha);
-                                byte g = (byte)(((color & 0x00FF00) >> 8) * alpha);
-                                byte r = (byte)(((color & 0xFF0000) >> 16) * alpha);
+                                byte r = (byte)(colorComponentRed * alpha);
+                                byte g = (byte)(colorComponentGreen * alpha);
+                                byte b = (byte)(colorComponentBlue * alpha);
                                 r = Math.Min(r, byte.MaxValue);
                                 g = Math.Min(g, byte.MaxValue);
                                 b = Math.Min(b, byte.MaxValue);
 
-                                //Pixel newPixel = new Pixel(x, y, r, b, g);
-                                //spherePixels[pixNumber++] = newPixel;
                                 SetPixel(x, y, b, g, r);
                             }
                             else
                             {
-                                //Do we need this?
+                                //Unlit pixel
                                 SetPixel(x, y, 0, 0, 0);
                             }
                         }
                     }
                     else
                     {
-                        //var asdf = _zBuffer[x + y];
                         ++culledPixels;
                     }
 				}
 			}
-            //return spherePixels;
 		}
-
-        public void SetSphereToBuffer(Pixel[] pixels)
-        {
-            for (int i = 0; i < pixels.Length; ++i)
-            {
-                Pixel p = pixels[i];
-                SetPixel(p.x, p.y, p.b, p.g, p.r);
-            }
-        }
 
 		private void SetPixel(int x, int y, byte b, byte g, byte r)
 		{
 			x *= _bytesPerPixel;
-			int stride = _width * _bytesPerPixel;
-			int index = x + y * stride;
+			int index = x + y * _stride;
 			_buffer[index] = b;
 			_buffer[index + 1] = g;
 			_buffer[index + 2] = r;

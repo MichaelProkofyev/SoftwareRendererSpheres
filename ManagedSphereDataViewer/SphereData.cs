@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Threading;
+using System.Globalization;
 
 namespace ManagedSphereDataViewer
 {
@@ -22,8 +23,11 @@ namespace ManagedSphereDataViewer
 				string line = null;
 				char[] splitChar = new char[] { ' ' };
 				Random rand = new Random(1);
-                int sphereCounter = 0;
-				while(true)
+
+                CultureInfo ci = (CultureInfo)CultureInfo.CurrentCulture.Clone();
+                ci.NumberFormat.CurrencyDecimalSeparator = ".";
+
+                while (true)
 				{
 					line = reader.ReadLine();
 					if(line == null)
@@ -32,9 +36,9 @@ namespace ManagedSphereDataViewer
 					}
 
 					string[] coordinates = line.Split(splitChar, StringSplitOptions.RemoveEmptyEntries);
-					float x = float.Parse(coordinates[0]);
-					float y = float.Parse(coordinates[1]);
-					float z = float.Parse(coordinates[2]);
+					float x = float.Parse(coordinates[0], NumberStyles.Any, ci);
+					float y = float.Parse(coordinates[1], NumberStyles.Any, ci);
+					float z = float.Parse(coordinates[2], NumberStyles.Any, ci);
 
 					y -= 60.0f;
 					z -= 50.0f;
@@ -54,10 +58,6 @@ namespace ManagedSphereDataViewer
 
 					var sphere = new SphereElement(x, y, z, r, 0, BGRA);
 					_spheres.Add(sphere);
-                    //if (++sphereCounter > 2)
-                    //{
-                    //    break;
-                    //}
                 }
 			}
 
