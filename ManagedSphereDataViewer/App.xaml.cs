@@ -19,10 +19,11 @@ namespace ManagedSphereDataViewer
 	/// </summary>
 	public partial class App : Application
 	{
-		private const int WindowHeight = 1024;
-		private const int WindowWidth = 1024;
-		private const string SphereDataFilePath = "sphere_sample_points.txt";
-		private const int textHeight = 16;
+		private const int windowHeight = 1024;
+		private const int windowWidth = 1024;
+		private const string sphereDataFilePathTxt = "sphere_sample_points.txt";
+        private const string sphereDataFilePathXml = "sphere_sample_points.xml";
+        private const int textHeight = 16;
 
 		private WriteableBitmap _bitmap;
 		private Int32Rect _rect;
@@ -34,9 +35,9 @@ namespace ManagedSphereDataViewer
 		private Window _mainWindow;
 		private float _rotation;
 		private float _rotationSpeed = 0.25f;
-
-        DateTimeOffset lastTime;
-
+        private float _colorLerpProgress = 0;
+        private float _colorChangeSpeed = 10f;
+        private DateTimeOffset _lastFrameTime;
 
         #region Profiling data
         private Stopwatch _stopwatch = new Stopwatch();
@@ -50,16 +51,17 @@ namespace ManagedSphereDataViewer
 		protected override void OnStartup(StartupEventArgs e)
 		{
 			base.OnStartup(e);
-			Initialize();
-			CreateAndShowMainWindow();
-		}
+            //TestBed();
+            Initialize();
+            CreateAndShowMainWindow();
+        }
 
 		private void Initialize()
 		{
-			_sphereData = new SphereData(SphereDataFilePath);
+			_sphereData = new SphereData(sphereDataFilePathXml, true);
 
 			// Create the writeable bitmap will be used to write and update.
-			_bitmap = new WriteableBitmap(WindowWidth, WindowHeight, 96, 96, PixelFormats.Bgr32, null);
+			_bitmap = new WriteableBitmap(windowWidth, windowHeight, 96, 96, PixelFormats.Bgr32, null);
 
 			// Define the rectangle of the writeable image we will modify. 
 			// The size is that of the writeable bitmap.
@@ -85,8 +87,8 @@ namespace ManagedSphereDataViewer
 			_mainWindow = new Window
 			{
 				Title = "SphereDataViewer",
-				Height = WindowHeight + titleHeight + textHeight,
-				Width = WindowWidth,
+				Height = windowHeight + titleHeight + textHeight,
+				Width = windowWidth,
 				ResizeMode = ResizeMode.CanMinimize
 			};
 
@@ -107,7 +109,7 @@ namespace ManagedSphereDataViewer
 			StackPanel stackPanel = new StackPanel
 			{
 				Orientation = Orientation.Vertical,
-				Height = WindowHeight,
+				Height = windowHeight,
 				VerticalAlignment = VerticalAlignment.Top,
 				HorizontalAlignment = HorizontalAlignment.Center,
 				Background = new SolidColorBrush(Color.FromArgb(255, 127, 127, 127))
@@ -122,7 +124,7 @@ namespace ManagedSphereDataViewer
 			_mainWindow.Show();
 
             // The DispatcherTimer will be used to update the viewer constantly
-            lastTime = DateTimeOffset.Now;
+            _lastFrameTime = DateTimeOffset.Now;
 
             DispatcherTimer dispatcherTimer = new DispatcherTimer();
 			dispatcherTimer.Tick += new EventHandler(Update);
@@ -133,8 +135,8 @@ namespace ManagedSphereDataViewer
 
 		private void Update(object sender, EventArgs e)
 		{
-            float deltaTime = (float)(DateTimeOffset.Now - lastTime).TotalSeconds;
-            lastTime = DateTimeOffset.Now;
+            float deltaTime = (float)(DateTimeOffset.Now - _lastFrameTime).TotalSeconds;
+            _lastFrameTime = DateTimeOffset.Now;
             RenderFrame(deltaTime);
 
 			//Update writeable bitmap by writing the frame data to the bitmap.
@@ -149,9 +151,10 @@ namespace ManagedSphereDataViewer
 		private void RenderFrame(float deltaTime)
 		{
 			_frameBuffer.Clear();
-            //TODO: Multiply rotation speed by deltaTime
 			_rotation += _rotationSpeed * deltaTime;
-			_sphereData.Render(_frameBuffer, _rotation);
+            float fullRotationProgress = _rotation * _colorChangeSpeed / Helpers.twoPi;
+            _colorLerpProgress = Helpers.PingPong(fullRotationProgress, 1f);
+            _sphereData.Render(_frameBuffer, _rotation, _colorLerpProgress);
 		}
 
 		private void UpdateProfiler()
@@ -171,8 +174,61 @@ namespace ManagedSphereDataViewer
 			++_totalFrames;
 			float fps = 1000 / Math.Max(deltaTime, 0.000001f);
 			float frametime = deltaTime / 1000.0f;
-			_textBlock.Text = string.Format("FPS: {0} Avg FPS: {1} Frametime: {2} Total frames: {3} Render size: {4}x{5},                                    rendered pixels:{6}, culled pixels:{7}", fps.ToString("0.00"), _prevFrames, frametime.ToString("0.000"), _totalFrames, _image.ActualWidth, _image.ActualHeight, _frameBuffer.renderedPixels, _frameBuffer.culledPixels);
+			_textBlock.Text = string.Format("FPS: {0} Avg FPS: {1} Frametime: {2} Total frames: {3} Render size: {4}x{5},                                    rotation:{6}", fps.ToString("0.00"), _prevFrames, frametime.ToString("0.000"), _totalFrames, _image.ActualWidth, _image.ActualHeight, _colorLerpProgress.ToString("0.0"));
 			_stopwatch.Restart();
 		}
-	}
+
+        private void TestBed()
+        {
+            Stopwatch stopwatch = new Stopwatch();
+            float result = 0;
+
+            Random randNum = new Random();
+            float[] testNumbers = Enumerable.Repeat(0, 1000000).Select(i => NextFloat(randNum)).ToArray();
+
+
+            stopwatch.Reset();
+            stopwatch.Start();
+            for (int i = 0; i < testNumbers.Length; i++)
+            {
+                result = (float)Math.Pow(testNumbers[i], 9);
+            }
+            stopwatch.Stop();
+
+            Console.WriteLine("Math pow");
+            Console.WriteLine("Value: " + result);
+            Console.WriteLine("Time (ms): " + stopwatch.ElapsedMilliseconds);
+            Console.WriteLine();
+
+
+
+            stopwatch.Reset();
+            stopwatch.Start();
+            int pNum = 0;
+            for (int i = 0; i < testNumbers.Length; i++)
+            {
+                //result = testNumbers[i] * testNumbers[i] * testNumbers[i] * testNumbers[i] * testNumbers[i] * testNumbers[i] * testNumbers[i] * testNumbers[i] * testNumbers[i];
+                for (pNum = 1; pNum < 9; pNum++)
+                {
+                    result *= testNumbers[i];
+                }
+            }
+            stopwatch.Stop();
+
+            Console.WriteLine("Multipllication 9 times");
+            Console.WriteLine("Value: " + result);
+            Console.WriteLine("Time (ms): " + stopwatch.ElapsedMilliseconds);
+            Console.WriteLine();
+
+
+            Console.ReadLine();
+        }
+
+        static float NextFloat(Random random)
+        {
+            double mantissa = (random.NextDouble() * 2.0) - 1.0;
+            double exponent = Math.Pow(2.0, random.Next(-126, 128));
+            return (float)(mantissa * exponent);
+        }
+    }
 }

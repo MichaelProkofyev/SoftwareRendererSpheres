@@ -40,4 +40,42 @@ namespace ManagedSphereDataViewer
 			return x * v2.x + y * v2.y + z * v2.z;
 		}
 	}
+
+    public struct Vector3Byte
+    {
+        public byte x;
+        public byte y;
+        public byte z;
+
+        public Vector3Byte(byte x, byte y, byte z)
+        {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+
+        public void Normalize()
+        {
+            byte d = (byte)Math.Sqrt(x * x + y * y + z * z);
+
+            x = (byte)(x / d);
+            y = (byte)(y / d);
+            z = (byte)(z / d);
+        }
+
+
+        public byte Dot(Vector3Byte v2)
+        {
+            return (byte)(x * v2.x + y * v2.y + z * v2.z);
+        }
+
+        public static Vector3Byte Lerp(Vector3Byte a, Vector3Byte b, float t)
+        {
+            t = Helpers.Clamp(t, 0f, 1f);
+            byte xResult = (byte)(a.x * t + b.x * (1 - t));
+            byte yResult = (byte)(a.y * t + b.y * (1 - t));
+            byte zResult = (byte)(a.z * t + b.z * (1 - t));
+            return new Vector3Byte(xResult, yResult, zResult);
+        }
+    }
 }

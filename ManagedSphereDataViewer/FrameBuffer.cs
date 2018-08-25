@@ -16,6 +16,7 @@ namespace ManagedSphereDataViewer
         public int culledPixels;
 
         private object lockObject = new object();
+        private const int shininess = 9;
 
         public FrameBuffer(int width, int height, int bytesPerPixel)
 		{
@@ -49,48 +50,25 @@ namespace ManagedSphereDataViewer
             culledPixels = 0;
         }
 
-        public struct Pixel
-        {
-            public int x;
-            public int y;
-            public byte r;
-            public byte b;
-            public byte g;
-
-            public Pixel(int x, int y, byte r, byte b, byte g)
-            {
-                this.x = x;
-                this.y = y;
-                this.r = r;
-                this.b = b;
-                this.g = g;
-            }
-        }
-
-        public void RenderSphere(float screenX, float screenY, float screenZ, float screenRadius, uint color, Vector3 lightDir)
+        public void RenderSphere(float screenX, float screenY, float screenZ, float screenRadius, Vector3Byte color, Vector3 lightDir)
 		{
-            uint colorComponentRed = ((color & 0xFF0000) >> 16);
-            uint colorComponentGreen = ((color & 0x00FF00) >> 8);
-            uint colorComponentBlue = ((color & 0x0000FF) >> 0);
-
-
             int centerY = (int)(screenY * _width / 2 + _width / 2);
             int centerX = (int)(screenX * _width / 2 + _width / 2);
 
-            //For square 1024x1024 buffer Rx == Ry
+            //For square 1024x1024 buffer - Rx == Ry
 			int R = (int)(screenRadius * _width / 2);
 
             int Rsquared = R * R;
             int maxX = centerX + R * 2;
             int maxY = centerY + R * 2;
-            //QUESTIONABLE AMOUNT OF LOOPING
+
             for (int x = centerX - R * 2; x <= maxX; ++x)
 			{
-                if (x < 0 || x >= _width)
+                if (x < 0 || _width <= x)
                     continue;
                 for (int y = centerY - R * 2; y <= maxY; ++y)
 				{
-					if(y < 0 || y >= _height)
+					if(y < 0 || _height <= y)
 						continue;
 
 					int dx = x - centerX;
@@ -111,6 +89,7 @@ namespace ManagedSphereDataViewer
                         ++renderedPixels;
                         //lock (_zBuffer)
                         {
+                            //Writing a float to _zBuffer array is atomic, no danger of corruption
                             _zBuffer[x + y * _width] = screenZ;
                         }
 
@@ -119,7 +98,7 @@ namespace ManagedSphereDataViewer
                             Vector3 vec_normal = new Vector3();
                             vec_normal.x = dx;
                             vec_normal.y = dy;
-                            vec_normal.z = (float)Math.Sqrt((Rsquared) - (dx * dx + dy * dy));
+                            vec_normal.z = (float)Math.Sqrt(Rsquared - (dx * dx + dy * dy));
                             vec_normal.Normalize();
 
                             float NdotL = lightDir.Dot(vec_normal);
@@ -132,16 +111,13 @@ namespace ManagedSphereDataViewer
                                 vec_eye.Normalize();
 
                                 float NdotHV = vec_eye.Dot(vec_normal);
-                                float specular = (float)Math.Pow(NdotHV, 9); // shininess=9
-                                float alpha = (NdotL + specular);
+                                float specular = Helpers.PowOfNine(NdotHV); // shininess=9
+                                float alpha = NdotL + specular;
                                 alpha = Math.Min(alpha, 1.0f); //Math.Min is slightly faster than if
 
-                                byte r = (byte)(colorComponentRed * alpha);
-                                byte g = (byte)(colorComponentGreen * alpha);
-                                byte b = (byte)(colorComponentBlue * alpha);
-                                r = Math.Min(r, byte.MaxValue);
-                                g = Math.Min(g, byte.MaxValue);
-                                b = Math.Min(b, byte.MaxValue);
+                                byte r = (byte)(color.x * alpha);
+                                byte g = (byte)(color.y * alpha);
+                                byte b = (byte)(color.z * alpha);
 
                                 SetPixel(x, y, b, g, r);
                             }

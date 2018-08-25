@@ -8,22 +8,25 @@ namespace ManagedSphereDataViewer
 {
 	public class SphereElement
 	{
-		public readonly float X;
-		public readonly float Y;
-		public readonly float Z;
-		public readonly float R;
-		public readonly uint Color;
-
+		public readonly float x;
+		public readonly float y;
+		public readonly float z;
+		public readonly float r;
         public float screenZ;
+		public readonly Vector3Byte colorA;
+        public readonly Vector3Byte colorB;
 
-		public SphereElement(float x, float y, float z, float r, float screenZ, uint color)
+
+		public SphereElement(float x, float y, float z, float r, float screenZ)
 		{
-			X = x;
-			Y = y;
-			Z = z;
-			R = r;
+			this.x = x;
+			this.y = y;
+			this.z = z;
+			this.r = r;
             this.screenZ = screenZ;
-			Color = color;
-		}
+
+            colorA = new Vector3Byte(Helpers.RandomByte(), Helpers.RandomByte(), Helpers.RandomByte());
+            colorB = new Vector3Byte(Helpers.RandomByte(), Helpers.RandomByte(), Helpers.RandomByte());
+        }
 	}
 }
