@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace ManagedSphereDataViewer
 {
@@ -25,9 +27,12 @@ namespace ManagedSphereDataViewer
             _zBuffer = new float[width * height];
         }
 
-        public byte[] GetBuffer()
+        public byte[] Buffer
         {
-            return _buffer;
+            get
+            {
+                return _buffer;
+            }
         }
 
         public void Clear()
@@ -43,7 +48,36 @@ namespace ManagedSphereDataViewer
             }
         }
 
-        public void RenderSphere(SphereElement sphere, float rotationSin, float rotationCos, float colorLerpProgress,  Vector3 lightDir)
+        public void RenderData(SphereData sphereData, float rotation, float colorLerpProgress, Vector3 lightDir)
+        {
+            List<SphereElement> spheres = sphereData.Spheres;
+            float rotationSin = (float)Math.Sin(rotation);
+            float rotationCos = (float)Math.Cos(rotation);
+
+            foreach (var sphere in spheres)
+            {
+                sphere.screenZ = sphere.x * rotationCos + sphere.z * rotationSin;
+            }
+
+            Task[] tasks = new Task[spheres.Count];
+            for (int taskIndex = 0; taskIndex < spheres.Count; ++taskIndex)
+            {
+                var sphere = spheres[taskIndex];
+                tasks[taskIndex] = Task.Run(() => RenderSphere(sphere, rotationSin, rotationCos, colorLerpProgress, lightDir));
+
+            }
+            Task.WaitAll(tasks);
+
+
+            //_spheres.AsEnumerable()
+            //.AsParallel()
+            //.ForAll((sphere) =>
+            //{
+            //    frameBuffer.RenderSphere(sphere, rotationSin, rotationCos, colorLerpProgress, lightDirection);
+            //});
+        }
+
+        private void RenderSphere(SphereElement sphere, float rotationSin, float rotationCos, float colorLerpProgress,  Vector3 lightDir)
         {
             float fX = sphere.x * rotationSin - sphere.z * rotationCos;
             float fY = sphere.y;
@@ -140,91 +174,11 @@ namespace ManagedSphereDataViewer
             }
         }
 
-
-        public void RenderSphere(float screenX, float screenY, float screenZ, float screenRadius, Vector3Byte sphereColor, Vector3 lightDir)
-		{
-            int centerY = (int)(screenY * _width / 2 + _width / 2);
-            int centerX = (int)(screenX * _width / 2 + _width / 2);
-
-            //For square 1024x1024 buffer - Rx == Ry
-			int R = (int)(screenRadius * _width / 2);
-
-            int Rsquared = R * R;
-            int minX = Math.Max(centerX - R * 2, 0);
-            int maxX = Math.Min(centerX + R * 2, _width - 1);
-            int minY = Math.Max(centerY - R * 2, 0);
-            int maxY = Math.Min(centerY + R * 2, _height - 1);
-
-            for (int x = minX; x <= maxX; ++x)
-			{
-                for (int y = minY; y <= maxY; ++y)
-				{
-					int dx = x - centerX;
-					int dy = y - centerY;
-                    int dx2 = dx * dx;
-                    int dy2 = dy * dy;
-
-                    //Skip pixels which are not part of a circle
-					if(dx2 + dy2 > Rsquared)
-						continue;
-
-                    bool pixelVisible;
-                    //lock (_zBuffer)
-                    {
-                        pixelVisible = screenZ < _zBuffer[x + y * _width];
-                    }
-                    if (pixelVisible)
-                    {
-                        //lock (_zBuffer)
-                        {
-                            //Writing a float to _zBuffer array is atomic, no danger of corruption
-                            _zBuffer[x + y * _width] = screenZ;
-                        }
-
-                        // Phong shading
-                        {
-                            Vector3 vec_normal = new Vector3();
-                            vec_normal.x = dx;
-                            vec_normal.y = dy;
-                            vec_normal.z = (float)Math.Sqrt(Rsquared - (dx2 + dy2));
-                            vec_normal.Normalize();
-
-                            float NdotL = lightDir.Dot(vec_normal);
-                            if (NdotL > 0)
-                            {
-                                Vector3 vec_eye = new Vector3();
-                                vec_eye.x = lightDir.x + screenX;
-                                vec_eye.y = lightDir.y + screenY;
-                                vec_eye.z = lightDir.z + 1.0f;
-                                vec_eye.Normalize();
-
-                                float NdotHV = vec_eye.Dot(vec_normal);
-                                float specular = NdotHV * NdotHV * NdotHV * NdotHV * NdotHV * NdotHV * NdotHV * NdotHV * NdotHV; // shininess=9
-                                float alpha = NdotL + specular;
-                                alpha = Math.Min(alpha, 1.0f);
-
-                                byte r = (byte)(sphereColor.x * alpha);
-                                byte g = (byte)(sphereColor.y * alpha);
-                                byte b = (byte)(sphereColor.z * alpha);
-
-                                SetPixel(x, y, b, g, r);
-                            }
-                            else
-                            {
-                                //Unlit pixel
-                                SetPixel(x, y, 0, 0, 0);
-                            }
-                        }
-                    }
-				}
-			}
-		}
-
         private void SetPixel(int x, int y, byte b, byte g, byte r)
 		{
 			x *= _bytesPerPixel;
 			int index = x + y * _stride;
-            //lock (_buffer)
+            //lock (lockObject)
             {
 			    _buffer[index] = b;
 			    _buffer[index + 1] = g;
@@ -232,5 +186,10 @@ namespace ManagedSphereDataViewer
 			    _buffer[index + 3] = byte.MaxValue;
             }
 		}
-	}
+
+        private int CompareSpheres(SphereElement s1, SphereElement s2)
+        {
+            return Math.Sign(s2.screenZ - s1.screenZ);
+        }
+    }
 }

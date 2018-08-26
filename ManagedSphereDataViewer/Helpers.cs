@@ -8,7 +8,7 @@ namespace ManagedSphereDataViewer
 {
     static class Helpers
     {
-        public const float twoPi = 6.2831f;
+        public const float twoPi = 6.283185f;
 
         private static Random rand = new Random();
 
@@ -27,6 +27,13 @@ namespace ManagedSphereDataViewer
             return (byte)rand.Next(byte.MinValue, byte.MaxValue);
         }
 
+        static float RandomFloat()
+        {
+            double mantissa = (rand.NextDouble() * 2.0) - 1.0;
+            double exponent = Math.Pow(2.0, rand.Next(-126, 128));
+            return (float)(mantissa * exponent);
+        }
+
         //Ping-pongs the value between 0 & length
         public static float PingPong(float value, float maxValue)
         {
@@ -40,20 +47,6 @@ namespace ManagedSphereDataViewer
             else
             {
                 return l - t;
-            }
-        }
-
-        public static IEnumerable<string> ReadLines(Func<System.IO.Stream> streamProvider,
-                                     Encoding encoding)
-        {
-            using (var stream = streamProvider())
-            using (var reader = new System.IO.StreamReader(stream, encoding))
-            {
-                string line;
-                while ((line = reader.ReadLine()) != null)
-                {
-                    yield return line;
-                }
             }
         }
     }

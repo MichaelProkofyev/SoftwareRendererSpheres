@@ -147,7 +147,7 @@ namespace ManagedSphereDataViewer
             RenderFrame(deltaTime);
 
 			//Update writeable bitmap by writing the frame data to the bitmap.
-			_bitmap.WritePixels(_rect, _frameBuffer.GetBuffer(), _stride, 0, 0);
+			_bitmap.WritePixels(_rect, _frameBuffer.Buffer, _stride, 0, 0);
 
 			//Set the Image source to the image control.
 			_image.Source = _bitmap;
@@ -161,7 +161,7 @@ namespace ManagedSphereDataViewer
 			_rotation += _rotationSpeed * deltaTime;
             float fullRotationProgress = _rotation * _colorChangeSpeed / Helpers.twoPi;
             _colorLerpProgress = Helpers.PingPong(fullRotationProgress, 1f);
-            _sphereData.Render(_frameBuffer, 0, _colorLerpProgress, _lightDirection);
+            _frameBuffer.RenderData(_sphereData, _rotation, _colorLerpProgress, _lightDirection);
 		}
 
 		private void UpdateProfiler()
@@ -184,58 +184,5 @@ namespace ManagedSphereDataViewer
 			_textBlock.Text = string.Format("FPS: {0} Avg FPS: {1} Frametime: {2} Total frames: {3} Render size: {4}x{5}", fps.ToString("0.00"), _prevFrames, frametime.ToString("0.000"), _totalFrames, _image.ActualWidth, _image.ActualHeight);
 			_stopwatch.Restart();
 		}
-
-        private void TestBed()
-        {
-            Stopwatch stopwatch = new Stopwatch();
-            float result = 0;
-
-            Random randNum = new Random();
-            float[] testNumbers = Enumerable.Repeat(0, 1000000).Select(i => NextFloat(randNum)).ToArray();
-
-
-            stopwatch.Reset();
-            stopwatch.Start();
-            for (int i = 0; i < testNumbers.Length; i++)
-            {
-                result = (float)Math.Pow(testNumbers[i], 9);
-            }
-            stopwatch.Stop();
-
-            Console.WriteLine("Math pow");
-            Console.WriteLine("Value: " + result);
-            Console.WriteLine("Time (ms): " + stopwatch.ElapsedMilliseconds);
-            Console.WriteLine();
-
-
-
-            stopwatch.Reset();
-            stopwatch.Start();
-            int pNum = 0;
-            for (int i = 0; i < testNumbers.Length; i++)
-            {
-                //result = testNumbers[i] * testNumbers[i] * testNumbers[i] * testNumbers[i] * testNumbers[i] * testNumbers[i] * testNumbers[i] * testNumbers[i] * testNumbers[i];
-                for (pNum = 1; pNum < 9; pNum++)
-                {
-                    result *= testNumbers[i];
-                }
-            }
-            stopwatch.Stop();
-
-            Console.WriteLine("Multipllication 9 times");
-            Console.WriteLine("Value: " + result);
-            Console.WriteLine("Time (ms): " + stopwatch.ElapsedMilliseconds);
-            Console.WriteLine();
-
-
-            Console.ReadLine();
-        }
-
-        static float NextFloat(Random random)
-        {
-            double mantissa = (random.NextDouble() * 2.0) - 1.0;
-            double exponent = Math.Pow(2.0, random.Next(-126, 128));
-            return (float)(mantissa * exponent);
-        }
     }
 }
