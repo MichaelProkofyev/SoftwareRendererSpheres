@@ -38,6 +38,7 @@ namespace ManagedSphereDataViewer
         private float _colorLerpProgress = 0;
         private float _colorChangeSpeed = 10f;
         private DateTimeOffset _lastFrameTime;
+        private Vector3 _lightDirection;
 
         #region Profiling data
         private Stopwatch _stopwatch = new Stopwatch();
@@ -76,7 +77,11 @@ namespace ManagedSphereDataViewer
 
 			// Create a byte array for a the entire size of bitmap.
 			_frameBuffer = new FrameBuffer(_bitmap.PixelWidth, _bitmap.PixelHeight, bytesPerPixel);
-		}
+
+            //Set light direction
+            _lightDirection = new Vector3(1.0f, -0.5f, 0.7f);
+            _lightDirection.Normalize();
+        }
 
 		private void CreateAndShowMainWindow()
 		{
@@ -154,7 +159,7 @@ namespace ManagedSphereDataViewer
 			_rotation += _rotationSpeed * deltaTime;
             float fullRotationProgress = _rotation * _colorChangeSpeed / Helpers.twoPi;
             _colorLerpProgress = Helpers.PingPong(fullRotationProgress, 1f);
-            _sphereData.Render(_frameBuffer, _rotation, _colorLerpProgress);
+            _sphereData.Render(_frameBuffer, _rotation, _colorLerpProgress, _lightDirection);
 		}
 
 		private void UpdateProfiler()

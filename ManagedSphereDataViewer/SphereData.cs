@@ -11,18 +11,14 @@ namespace ManagedSphereDataViewer
 	public class SphereData
 	{
 		private List<SphereElement> _spheres;
-		private Vector3 _lightDirection;
 
-		public SphereData(string filename, bool isXmlFile)
-		{
-			_spheres = new List<SphereElement>();
-
+        public SphereData(string filename, bool isXmlFile)
+        {
             Random rand = new Random(1);
-
             CultureInfo ci = (CultureInfo)CultureInfo.CurrentCulture.Clone();
             ci.NumberFormat.CurrencyDecimalSeparator = ".";
 
-            Action<string, string, string> coordinatesToSphere = (string xString, string yString, string zString) =>
+            void CoordinatesToSphere(string xString, string yString, string zString)
             {
                 float x = float.Parse(xString, NumberStyles.Any, ci);
                 float y = float.Parse(yString, NumberStyles.Any, ci);
@@ -40,19 +36,12 @@ namespace ManagedSphereDataViewer
 
                 var sphere = new SphereElement(x, y, z, r, 0);
                 _spheres.Add(sphere);
-            };
-
-            if (isXmlFile == false)
-            {
-                char[] splitChar = new char[] { ' ' };
-                var lines = Helpers.ReadLines(() => new FileStream(filename, FileMode.Open), Encoding.UTF8).ToList();
-                foreach (var line in lines)
-                {
-                    string[] coordinates = line.Split(splitChar, StringSplitOptions.RemoveEmptyEntries);
-                    coordinatesToSphere(coordinates[0], coordinates[1], coordinates[2]);
-                }
             }
-            else
+
+            _spheres = new List<SphereElement>();
+
+
+            if (isXmlFile)
             {
                 var xmlDoc = new XmlDocument();
                 var filePath = Path.GetFullPath(filename);
@@ -60,22 +49,39 @@ namespace ManagedSphereDataViewer
                 foreach (XmlNode vectorNode in xmlDoc.DocumentElement.ChildNodes)
                 {
                     var coordinates = vectorNode.ChildNodes;
-                    coordinatesToSphere(coordinates[0].InnerText, coordinates[1].InnerText, coordinates[2].InnerText);
+                    CoordinatesToSphere(coordinates[0].InnerText, coordinates[1].InnerText, coordinates[2].InnerText);
                 }
             }
-
-			_lightDirection = new Vector3(1.0f, -0.5f, 0.7f);
-			_lightDirection.Normalize();
+            else
+            {
+                char[] splitChar = new char[] { ' ' };
+                var lines = Helpers.ReadLines(() => new FileStream(filename, FileMode.Open), Encoding.UTF8).ToList();
+                foreach (var line in lines)
+                {
+                    string[] coordinates = line.Split(splitChar, StringSplitOptions.RemoveEmptyEntries);
+                    CoordinatesToSphere(coordinates[0], coordinates[1], coordinates[2]);
+                }
+            }
 		}
 
-		public void Render(FrameBuffer frameBuffer, float rotation, float colorLerpProgress)
+		public void Render(FrameBuffer frameBuffer, float rotation, float colorLerpProgress, Vector3 lightDirection)
 		{
 			float rotationSin = (float)Math.Sin(rotation);
 			float rotationCos = (float)Math.Cos(rotation);
-            
+
+            float minScreenZ = float.MaxValue;
+            float maxScreenZ = float.MinValue;
             foreach (var sphere in _spheres)
 			{
 				sphere.screenZ = sphere.x * rotationCos + sphere.z * rotationSin;
+                if (sphere.screenZ < minScreenZ)
+                {
+                    minScreenZ = sphere.screenZ;
+                }
+                if(maxScreenZ < sphere.screenZ)
+                {
+                    maxScreenZ = sphere.screenZ;
+                }
             }
 
             _spheres.AsEnumerable()
@@ -96,8 +102,10 @@ namespace ManagedSphereDataViewer
                     float fScreenX = fX / fZ;
                     float fScreenY = fY / fZ;
                     float fScreenZ = fZ;
+
+                    //float fogAmount = fZ * .8f;
                     Vector3Byte sphereColor = Vector3Byte.Lerp(sphere.colorA, sphere.colorB, colorLerpProgress);
-                    frameBuffer.RenderSphere(fScreenX, fScreenY, fScreenZ, sphere.r / fZ, sphereColor, _lightDirection);
+                    frameBuffer.RenderSphere(fScreenX, fScreenY, fScreenZ, sphere.r / fZ, sphereColor, lightDirection);
                 });
 
             //Single-threaded

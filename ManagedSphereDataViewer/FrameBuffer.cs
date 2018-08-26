@@ -111,7 +111,7 @@ namespace ManagedSphereDataViewer
                                 vec_eye.Normalize();
 
                                 float NdotHV = vec_eye.Dot(vec_normal);
-                                float specular = Helpers.PowOfNine(NdotHV); // shininess=9
+                                float specular = PowOfNine(NdotHV); // shininess=9
                                 float alpha = NdotL + specular;
                                 alpha = Math.Min(alpha, 1.0f); //Math.Min is slightly faster than if
 
@@ -136,14 +136,22 @@ namespace ManagedSphereDataViewer
 			}
 		}
 
-		private void SetPixel(int x, int y, byte b, byte g, byte r)
+        private static float PowOfNine(float x)
+        {
+            return x * x * x * x * x * x * x * x * x;
+        }
+
+        private void SetPixel(int x, int y, byte b, byte g, byte r)
 		{
 			x *= _bytesPerPixel;
 			int index = x + y * _stride;
-			_buffer[index] = b;
-			_buffer[index + 1] = g;
-			_buffer[index + 2] = r;
-			_buffer[index + 3] = byte.MaxValue;
+            lock (_buffer)
+            {
+			    _buffer[index] = b;
+			    _buffer[index + 1] = g;
+			    _buffer[index + 2] = r;
+			    _buffer[index + 3] = byte.MaxValue;
+            }
 		}
 	}
 }

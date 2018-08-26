@@ -63,7 +63,6 @@ namespace ManagedSphereDataViewer
             z = (byte)(z / d);
         }
 
-
         public byte Dot(Vector3Byte v2)
         {
             return (byte)(x * v2.x + y * v2.y + z * v2.z);

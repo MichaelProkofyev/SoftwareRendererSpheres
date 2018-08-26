@@ -12,11 +12,6 @@ namespace ManagedSphereDataViewer
 
         private static Random rand = new Random();
 
-        public static float PowOfNine(float x)
-        {
-            return x * x * x * x * x * x * x * x * x;
-        }
-
         public static uint Lerp(uint a, uint b, float progress)
         {
             return (uint)(a * progress + b * (1 - progress));
