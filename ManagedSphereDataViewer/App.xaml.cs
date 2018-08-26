@@ -53,6 +53,8 @@ namespace ManagedSphereDataViewer
 		{
 			base.OnStartup(e);
             //TestBed();
+            //TreadsTest.Test();
+            //return;
             Initialize();
             CreateAndShowMainWindow();
         }
@@ -159,7 +161,7 @@ namespace ManagedSphereDataViewer
 			_rotation += _rotationSpeed * deltaTime;
             float fullRotationProgress = _rotation * _colorChangeSpeed / Helpers.twoPi;
             _colorLerpProgress = Helpers.PingPong(fullRotationProgress, 1f);
-            _sphereData.Render(_frameBuffer, _rotation, _colorLerpProgress, _lightDirection);
+            _sphereData.Render(_frameBuffer, 0, _colorLerpProgress, _lightDirection);
 		}
 
 		private void UpdateProfiler()
@@ -179,7 +181,7 @@ namespace ManagedSphereDataViewer
 			++_totalFrames;
 			float fps = 1000 / Math.Max(deltaTime, 0.000001f);
 			float frametime = deltaTime / 1000.0f;
-			_textBlock.Text = string.Format("FPS: {0} Avg FPS: {1} Frametime: {2} Total frames: {3} Render size: {4}x{5},                                    rotation:{6}", fps.ToString("0.00"), _prevFrames, frametime.ToString("0.000"), _totalFrames, _image.ActualWidth, _image.ActualHeight, _colorLerpProgress.ToString("0.0"));
+			_textBlock.Text = string.Format("FPS: {0} Avg FPS: {1} Frametime: {2} Total frames: {3} Render size: {4}x{5}", fps.ToString("0.00"), _prevFrames, frametime.ToString("0.000"), _totalFrames, _image.ActualWidth, _image.ActualHeight);
 			_stopwatch.Restart();
 		}
 

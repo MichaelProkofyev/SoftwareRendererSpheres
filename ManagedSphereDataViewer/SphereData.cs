@@ -5,6 +5,8 @@ using System.Text;
 using System.IO;
 using System.Globalization;
 using System.Xml;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ManagedSphereDataViewer
 {
@@ -84,36 +86,25 @@ namespace ManagedSphereDataViewer
                 }
             }
 
-            _spheres.AsEnumerable()
-                .AsParallel()
-                .ForAll((sphere) =>
-                {
-                    float fX = sphere.x * rotationSin - sphere.z * rotationCos;
-                    float fY = sphere.y;
-                    float fZ = sphere.screenZ;
+            Task[] tasks = new Task[_spheres.Count];
+            for (int taskIndex = 0; taskIndex < _spheres.Count; taskIndex++)
+            {
+                var sphere = _spheres[taskIndex];
+                tasks[taskIndex] = Task.Run(() => frameBuffer.RenderSphere(sphere, rotationSin, rotationCos, colorLerpProgress, lightDirection));
 
-                    fZ += 1.5f;
+            }
+            Task.WaitAll(tasks);
 
-                    //Skip the sphere that's too close to camera frustum
-                    if (fZ < 0.001f)
-                        return;
 
-                    //Weak perspective projection
-                    float fScreenX = fX / fZ;
-                    float fScreenY = fY / fZ;
-                    float fScreenZ = fZ;
-
-                    //float fogAmount = fZ * .8f;
-                    Vector3Byte sphereColor = Vector3Byte.Lerp(sphere.colorA, sphere.colorB, colorLerpProgress);
-                    frameBuffer.RenderSphere(fScreenX, fScreenY, fScreenZ, sphere.r / fZ, sphereColor, lightDirection);
-                });
-
-            //Single-threaded
-            //_spheres.Sort(CompareSpheres);
-            //_spheres.ForEach((sphere) => PrepareSphere(frameBuffer, sphere, s, c));
+            //_spheres.AsEnumerable()
+            //.AsParallel()
+            //.ForAll((sphere) =>
+            //{
+            //    frameBuffer.RenderSphere(sphere, rotationSin, rotationCos, colorLerpProgress, lightDirection);
+            //});
         }
 
-		private int CompareSpheres(SphereElement s1, SphereElement s2)
+        private int CompareSpheres(SphereElement s1, SphereElement s2)
 		{
 			return Math.Sign(s2.screenZ - s1.screenZ);
 		}
