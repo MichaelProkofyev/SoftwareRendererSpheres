@@ -1,0 +1,21 @@
+*Explanation of certain design desicions*
+
+*App.xaml.cs*
+Calculation of deltaTime between frames added, so that rotation speed can be FPS independent & more predictable
+
+*Helpers.cs*
+static class Helpers contains multiple universal methods, which are not tied to any specific implementation of present entities & could be reused for other possible tasks
+
+*SphereElement.cs*
+colors for the sphere are set inside its constructor, because their generation is not dependant on anything from the outside.
+
+*SphereData.cs*
+Rendering logic is moved to FrameBuffer, because I see this class as a container for data, and the less its tied up to the overall architecture - the better.
+
+*FrameBuffer.cs*
+1. RenderSphere() method is called from parallel threads, which are sharing _zBuffer and buffer arrays. There is no locking of them, because:
+	- it hurts perfomance a lot
+	- writing a value to float & byte arrays is atomic, so no crazy memory corruption should occur
+	- though small visual artifacts are present, they are not jarring when spheres are in motion
+	- it's worth it
+2. I tried to implement "fast" approximate square root, but, in my tests, it was slower than the native one

@@ -52,9 +52,6 @@ namespace ManagedSphereDataViewer
 		protected override void OnStartup(StartupEventArgs e)
 		{
 			base.OnStartup(e);
-            //TestBed();
-            //TreadsTest.Test();
-            //return;
             Initialize();
             CreateAndShowMainWindow();
         }

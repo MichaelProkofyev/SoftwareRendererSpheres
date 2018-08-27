@@ -13,9 +13,9 @@ namespace ManagedSphereDataViewer
 		public readonly float z;
 		public readonly float r;
         public float screenZ;
+
 		public readonly Vector3Byte colorA;
         public readonly Vector3Byte colorB;
-
 
 		public SphereElement(float x, float y, float z, float r, float screenZ)
 		{

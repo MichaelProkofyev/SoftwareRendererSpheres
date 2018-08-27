@@ -14,7 +14,6 @@ namespace ManagedSphereDataViewer
         private readonly int _bytesPerPixel;
         private readonly int _stride;
 
-        private object lockObject = new object();
         private const int shininess = 9;
 
         public FrameBuffer(int width, int height, int bytesPerPixel)
@@ -67,14 +66,6 @@ namespace ManagedSphereDataViewer
 
             }
             Task.WaitAll(tasks);
-
-
-            //_spheres.AsEnumerable()
-            //.AsParallel()
-            //.ForAll((sphere) =>
-            //{
-            //    frameBuffer.RenderSphere(sphere, rotationSin, rotationCos, colorLerpProgress, lightDirection);
-            //});
         }
 
         private void RenderSphere(SphereElement sphere, float rotationSin, float rotationCos, float colorLerpProgress,  Vector3 lightDir)
@@ -122,12 +113,7 @@ namespace ManagedSphereDataViewer
                     if (dx2 + dy2 > Rsquared)
                         continue;
 
-                    bool pixelVisible;
-                    //lock (_zBuffer)
-                    {
-                        pixelVisible = screenZ < _zBuffer[x + y * _width];
-                    }
-                    if (pixelVisible)
+                    if (screenZ < _zBuffer[x + y * _width])
                     {
                         //lock (_zBuffer)
                         {
@@ -178,13 +164,10 @@ namespace ManagedSphereDataViewer
 		{
 			x *= _bytesPerPixel;
 			int index = x + y * _stride;
-            //lock (lockObject)
-            {
-			    _buffer[index] = b;
-			    _buffer[index + 1] = g;
-			    _buffer[index + 2] = r;
-			    _buffer[index + 3] = byte.MaxValue;
-            }
+			_buffer[index] = b;
+			_buffer[index + 1] = g;
+			_buffer[index + 2] = r;
+			_buffer[index + 3] = byte.MaxValue;
 		}
 
         private int CompareSpheres(SphereElement s1, SphereElement s2)
